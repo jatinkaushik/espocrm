@@ -278,12 +278,15 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                 start: this.eventStart.clone(),
                 end: this.eventEnd.clone(),
                 type: 'background',
-                style: 'z-index: 4; opacity: 0.2;',
+                style: 'z-index: 4; opacity: 0.6;',
+                className: 'event-range',
             };
 
             var color = this.getColorFromScopeName(this.model.entityType);
             if (color) {
-                o.style += '; background-color: ' + color;
+                o.style += '; border-color: ' + color;
+                var rgb = this.hexToRgb(color);
+                o.style += '; background-color: rgba('+rgb.r+', '+rgb.g+', '+rgb.b+', 0.05)';
             }
 
             this.userIdList.forEach(function (id) {
@@ -425,6 +428,15 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                 this.getMetadata().get(['clientDefs', 'Calendar', 'colors', scope]);
 
             return color;
+        },
+
+        hexToRgb: function (hex) {
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+            } : null;
         },
 
     });

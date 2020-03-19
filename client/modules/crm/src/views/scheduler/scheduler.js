@@ -39,7 +39,9 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
         rightMargin: 48 * 3600,
 
-        rangeMultiplier: 4,
+        rangeMultiplierLeft: 3,
+
+        rangeMultiplierRight: 4,
 
         setup: function () {
             this.startField = this.options.startField || 'dateStart';
@@ -63,6 +65,8 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                         return;
                     }
 
+                    this.trigger('has-data');
+
                     if (this.timeline) {
                         this.updateEvent();
 
@@ -73,6 +77,12 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                     }
                 } else {
                     this.reRender();
+                }
+            }, this);
+
+            this.once('remove', function () {
+                if (this.timeline) {
+                    this.timeline.destroy();
                 }
             }, this);
         },
@@ -92,7 +102,13 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                     return;
                 }
 
-                this.trigger('has-data');
+                if (this.timeline) {
+                    this.timeline.destroy();
+                }
+
+                if (this.lastHeight) {
+                    $timeline.css('min-height', this.lastHeight + 'px');
+                }
 
                 this.fetch(this.start, this.end, function (eventList) {
                     var itemsDataSet = new Vis.DataSet(eventList);
@@ -135,6 +151,8 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                         },
                     });
 
+                    $timeline.css('min-height', '');
+
                     timeline.on('rangechanged', function (e) {
                         e.skipClick = true;
 
@@ -147,13 +165,9 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                         this.updateRange();
                     }.bind(this));
 
-                    this.once('render', function () {
-                        timeline.destroy();
-                    }, this);
-
-                    this.once('remove', function () {
-                        timeline.destroy();
-                    }, this);
+                    setTimeout(function () {
+                        this.lastHeight = $timeline.height();
+                    }.bind(this), 500);
 
                 }.bind(this));
             }.bind(this));
@@ -161,9 +175,11 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
         updateEvent: function () {
             var eventList = Espo.Utils.cloneDeep(this.busyEventList);
-            this.addEvent(eventList);
 
-            var itemsDataSet = new this.Vis.DataSet(eventList);
+            var convertedEventList = this.convertEventList(eventList);
+            this.addEvent(convertedEventList);
+
+            var itemsDataSet = new this.Vis.DataSet(convertedEventList);
             this.timeline.setItems(itemsDataSet);
         },
 
@@ -194,8 +210,8 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
             var diff = this.end.diff(this.start, 'hours');
 
-            this.start.add(-diff * this.rangeMultiplier, 'hours');
-            this.end.add(diff * this.rangeMultiplier, 'hours');
+            this.start.add(-diff * this.rangeMultiplierLeft, 'hours');
+            this.end.add(diff * this.rangeMultiplierRight, 'hours');
 
             this.start.startOf('hour');
             this.end.endOf('hour');
@@ -237,9 +253,10 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                     }, this);
                 }
 
+                this.busyEventList = Espo.Utils.cloneDeep(eventList);
+
                 var convertedEventList = this.convertEventList(eventList);
 
-                this.busyEventList = Espo.Utils.cloneDeep(convertedEventList);
                 this.addEvent(convertedEventList);
 
                 callback(convertedEventList);
@@ -248,19 +265,35 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
         },
 
         addEvent: function (list) {
+            this.getCurrentItemList().forEach(function (item) {
+                list.push(item);
+            }, this);
+        },
+
+        getCurrentItemList: function () {
+            var list = [];
+
             var o = {
                 type: 'point',
                 start: this.eventStart.clone(),
                 end: this.eventEnd.clone(),
                 type: 'background',
-                className: 'item',
+                style: 'z-index: 2; opacity: 0.3;',
             };
+
+            var color = this.getColorFromScopeName(this.model.entityType);
+            if (color) {
+                o.style += '; background-color: ' + color;
+            }
 
             this.userIdList.forEach(function (id) {
                 var c = Espo.Utils.clone(o);
                 c.group = id;
+                c.id = 'event-' + id;
                 list.push(c);
             }, this);
+
+            return list;
         },
 
         convertEventList: function (list) {
@@ -385,6 +418,13 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                 }
             };
             return format;
+        },
+
+        getColorFromScopeName: function (scope) {
+            var color = this.getMetadata().get(['clientDefs', scope, 'color']) ||
+                this.getMetadata().get(['clientDefs', 'Calendar', 'colors', scope]);
+
+            return color;
         },
 
     });

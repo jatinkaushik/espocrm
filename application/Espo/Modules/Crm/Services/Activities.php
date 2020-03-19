@@ -55,6 +55,8 @@ class Activities extends \Espo\Core\Services\Base
 
     const REMINDER_PAST_HOURS = 24;
 
+    const BUSY_RANGES_MAX_RANGE_DAYS = 5;
+
     protected function getPDO()
     {
         return $this->getEntityManager()->getPDO();
@@ -1275,6 +1277,39 @@ class Activities extends \Espo\Core\Services\Base
             }
 
             $resultData->$userId = $userData;
+        }
+        return $resultData;
+    }
+
+    public function getBusyRanges(array $userIdList, string $from, string $to, ?array $scopeList = null)
+    {
+        // TODO configurable scopeList
+        $scopeList = $scopeList ?? ['Meeting', 'Call'];
+
+        try {
+            $dtFrom = new \DateTime($from);
+            $dtTo = new \DateTime($to);
+            $diff = $dtTo->diff($dtFrom, true);
+            if ($diff->days > $this->getConfig()->get('busyRangesMaxRange', self::BUSY_RANGES_MAX_RANGE_DAYS)) {
+                return [];
+            }
+
+        } catch (\Exception $e) {
+            throw new Error("BusyRanges: Bad date range.");
+        }
+
+        $resultData = (object) [];
+        foreach ($userIdList as $userId) {
+            try {
+                $busyRangeList = $this->getBusyRangeList($userId, $from, $to, $scopeList);
+            } catch (\Exception $e) {
+                if ($e instanceof Forbidden) {
+                    continue;
+                }
+                throw new \Exception($e->getMessage(), $e->getCode(), $e);
+            }
+
+            $resultData->$userId = $busyRangeList;
         }
         return $resultData;
     }

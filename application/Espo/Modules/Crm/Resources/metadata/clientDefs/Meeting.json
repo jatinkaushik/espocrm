@@ -60,6 +60,15 @@
             }
         ]
     },
+    "bottomPanels": {
+        "edit": [
+            {
+                "name": "scheduler",
+                "label": "Scheduler",
+                "view": "crm:views/meeting/record/panels/scheduler"
+            }
+        ]
+    },
     "filterList": [
         {
             "name":"planned"

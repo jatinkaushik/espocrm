@@ -41,7 +41,7 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
         rangeMultiplierLeft: 3,
 
-        rangeMultiplierRight: 4,
+        rangeMultiplierRight: 3,
 
         setup: function () {
             this.startField = this.options.startField || 'dateStart';
@@ -278,7 +278,7 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                 start: this.eventStart.clone(),
                 end: this.eventEnd.clone(),
                 type: 'background',
-                style: 'z-index: 2; opacity: 0.3;',
+                style: 'z-index: 4; opacity: 0.2;',
             };
 
             var color = this.getColorFromScopeName(this.model.entityType);

@@ -51,6 +51,7 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
             this.listenTo(this.model, 'change', function (m) {
                 var isChanged =
+                    m.hasChanged('isAllDay') ||
                     m.hasChanged(this.startField) ||
                     m.hasChanged(this.endField) ||
                     m.hasChanged(this.usersField + 'Ids') ||
@@ -194,21 +195,34 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
         },
 
         initDates: function (update) {
-            var startS = this.model.get(this.startField);
-            var endS = this.model.get(this.endField);
-
             this.start = null;
             this.end = null;
 
+            var startS = this.model.get(this.startField);
+            var endS = this.model.get(this.endField);
+
+            if (this.model.get('isAllDay')) {
+                startS = this.model.get(this.startField + 'Date');
+                endS = this.model.get(this.endField + 'Date');
+            }
+
             if (!startS || !endS) return;
 
-            this.eventStart = moment.tz(startS, this.getDateTime().getTimeZone());
-            this.eventEnd = moment.tz(endS, this.getDateTime().getTimeZone());
+            if (this.model.get('isAllDay')) {
+                this.eventStart = moment.tz(startS, this.getDateTime().getTimeZone());
+                this.eventEnd = moment.tz(endS, this.getDateTime().getTimeZone());
+                this.eventEnd.add(1, 'day');
+            } else {
+                this.eventStart = moment.utc(startS).tz(this.getDateTime().getTimeZone());
+                this.eventEnd = moment.utc(endS).tz(this.getDateTime().getTimeZone());
+            }
+
+            var diff = this.eventEnd.diff(this.eventStart, 'hours');
+
+            if (diff < 0) return;
 
             this.start = this.eventStart.clone();
             this.end = this.eventEnd.clone();
-
-            var diff = this.end.diff(this.start, 'hours');
 
             this.start.add(-diff * this.rangeMultiplierLeft, 'hours');
             this.end.add(diff * this.rangeMultiplierRight, 'hours');

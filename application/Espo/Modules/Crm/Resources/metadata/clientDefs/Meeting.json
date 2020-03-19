@@ -61,6 +61,13 @@
         ]
     },
     "bottomPanels": {
+        "detail": [
+            {
+                "name": "scheduler",
+                "label": "Scheduler",
+                "view": "crm:views/meeting/record/panels/scheduler"
+            }
+        ],
         "edit": [
             {
                 "name": "scheduler",

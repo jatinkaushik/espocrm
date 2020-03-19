@@ -280,6 +280,8 @@ class Activities extends \Espo\Core\Controllers\Base
 
         $userIdList = explode(',', $userIdList);
 
-        return $this->getService('Activities')->getBusyRanges($userIdList, $from, $to);
+        return $this->getService('Activities')->getBusyRanges(
+            $userIdList, $from, $to, $request->get('entityType'), $request->get('entityId')
+        );
     }
 }

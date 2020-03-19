@@ -240,6 +240,10 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
             url += '&userIdList=' + encodeURIComponent(this.userIdList.join(','));
 
+            if (this.model.id) {
+                url += '&entityId=' + this.model.id + '&entityType=' + this.model.entityType;
+            }
+
             this.ajaxGetRequest(url).then(function (data) {
                 this.fetchedStart = from.clone();
                 this.fetchedEnd = to.clone();

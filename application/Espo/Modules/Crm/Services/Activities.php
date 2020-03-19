@@ -1281,7 +1281,9 @@ class Activities extends \Espo\Core\Services\Base
         return $resultData;
     }
 
-    public function getBusyRanges(array $userIdList, string $from, string $to, ?array $scopeList = null)
+    public function getBusyRanges(
+        array $userIdList, string $from, string $to,
+        ?string $ignoreType = null, ?string $ignoreId = null, ?array $scopeList = null)
     {
         // TODO configurable scopeList
         $scopeList = $scopeList ?? ['Meeting', 'Call'];
@@ -1298,10 +1300,21 @@ class Activities extends \Espo\Core\Services\Base
             throw new Error("BusyRanges: Bad date range.");
         }
 
+        $ignoreList = null;
+
+        if ($ignoreType && $ignoreId) {
+            $ignoreList = [
+                [
+                    'id' => $ignoreId,
+                    'scope' => $ignoreType,
+                ]
+            ];
+        }
+
         $resultData = (object) [];
         foreach ($userIdList as $userId) {
             try {
-                $busyRangeList = $this->getBusyRangeList($userId, $from, $to, $scopeList);
+                $busyRangeList = $this->getBusyRangeList($userId, $from, $to, $scopeList, $ignoreList);
             } catch (\Exception $e) {
                 if ($e instanceof Forbidden) {
                     continue;

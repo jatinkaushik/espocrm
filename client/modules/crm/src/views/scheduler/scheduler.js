@@ -58,7 +58,14 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                 if (!m.hasChanged(this.assignedUserField + 'Id') && !m.hasChanged(this.usersField + 'Ids')) {
                     this.initDates(true);
 
+                    if (!this.start || !this.end || !this.userIdList.length) {
+                        this.trigger('no-data');
+                        return;
+                    }
+
                     if (this.timeline) {
+                        this.updateEvent();
+
                         this.timeline.setWindow(
                             this.start.toDate(),
                             this.end.toDate()
@@ -89,8 +96,6 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
                 this.fetch(this.start, this.end, function (eventList) {
                     var itemsDataSet = new Vis.DataSet(eventList);
-
-                    this.addEventToDataSet(itemsDataSet);
 
                     var timeline = this.timeline = new Vis.Timeline($timeline.get(0), itemsDataSet, this.groupsDataSet, {
                         dataAttributes: 'all',
@@ -140,8 +145,6 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                         this.end = moment(e.end);
 
                         this.updateRange();
-
-
                     }.bind(this));
 
                     this.once('render', function () {
@@ -154,6 +157,14 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
                 }.bind(this));
             }.bind(this));
+        },
+
+        updateEvent: function () {
+            var eventList = Espo.Utils.cloneDeep(this.busyEventList);
+            this.addEvent(eventList);
+
+            var itemsDataSet = new this.Vis.DataSet(eventList);
+            this.timeline.setItems(itemsDataSet);
         },
 
         updateRange: function () {
@@ -199,7 +210,6 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
             this.fetch(this.start, this.end, function (eventList) {
                 var itemsDataSet = new this.Vis.DataSet(eventList);
                 this.timeline.setItems(itemsDataSet);
-                this.addEventToDataSet(itemsDataSet);
             }.bind(this));
         },
 
@@ -228,13 +238,29 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                 }
 
                 var convertedEventList = this.convertEventList(eventList);
+
+                this.busyEventList = Espo.Utils.cloneDeep(convertedEventList);
+                this.addEvent(convertedEventList);
+
                 callback(convertedEventList);
 
             }.bind(this));
         },
 
-        addEventToDataSet: function (dataSet) {
+        addEvent: function (list) {
+            var o = {
+                type: 'point',
+                start: this.eventStart.clone(),
+                end: this.eventEnd.clone(),
+                type: 'background',
+                className: 'item',
+            };
 
+            this.userIdList.forEach(function (id) {
+                var c = Espo.Utils.clone(o);
+                c.group = id;
+                list.push(c);
+            }, this);
         },
 
         convertEventList: function (list) {
@@ -258,8 +284,6 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                     'date-end': o.dateEnd,
                     type: 'background',
                 };
-            } else {
-
             }
 
             if (o.dateStart) {

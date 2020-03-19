@@ -55,7 +55,7 @@ class Activities extends \Espo\Core\Services\Base
 
     const REMINDER_PAST_HOURS = 24;
 
-    const BUSY_RANGES_MAX_RANGE_DAYS = 5;
+    const BUSY_RANGES_MAX_RANGE_DAYS = 10;
 
     protected function getPDO()
     {
@@ -1426,11 +1426,15 @@ class Activities extends \Espo\Core\Services\Base
             }
         }
 
+        $canceledStatusList = $this->getMetadata()->get('clientDefs.Calendar.canceledStatusList') ?? [];
+
         foreach ($eventList as $i => $item) {
             $eventList[$i] = (object) $item;
         }
         foreach ($eventList as $event) {
             if (empty($event->dateStart) || empty($event->dateEnd)) continue;
+            if (in_array($event->status ?? null, $canceledStatusList)) continue;
+
             if (isset($ignoreHash->{$event->id})) continue;
             try {
                 $start = new \DateTime($event->dateStart);

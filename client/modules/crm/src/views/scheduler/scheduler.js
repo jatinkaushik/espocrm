@@ -39,6 +39,8 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
         rightMargin: 48 * 3600,
 
+        rangeMultiplier: 4,
+
         setup: function () {
             this.startField = this.options.startField || 'dateStart';
             this.endField = this.options.endField || 'dateEnd';
@@ -53,8 +55,18 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                     m.hasChanged(this.assignedUserField + 'Id');
                 if (!isChanged) return;
 
-                this.reRender();
+                if (!m.hasChanged(this.assignedUserField + 'Id') && !m.hasChanged(this.usersField + 'Ids')) {
+                    this.initDates(true);
 
+                    if (this.timeline) {
+                        this.timeline.setWindow(
+                            this.start.toDate(),
+                            this.end.toDate()
+                        );
+                    }
+                } else {
+                    this.reRender();
+                }
             }, this);
         },
 
@@ -77,6 +89,8 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
                 this.fetch(this.start, this.end, function (eventList) {
                     var itemsDataSet = new Vis.DataSet(eventList);
+
+                    this.addEventToDataSet(itemsDataSet);
 
                     var timeline = this.timeline = new Vis.Timeline($timeline.get(0), itemsDataSet, this.groupsDataSet, {
                         dataAttributes: 'all',
@@ -125,13 +139,9 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                         this.start = moment(e.start);
                         this.end = moment(e.end);
 
-                        if (
-                            (this.start.unix() < this.fetchedStart.unix() + this.rangeMarginThreshold)
-                            ||
-                            (this.end.unix() > this.fetchedEnd.unix() - this.rangeMarginThreshold)
-                        ) {
-                            this.runFetch();
-                        }
+                        this.updateRange();
+
+
                     }.bind(this));
 
                     this.once('render', function () {
@@ -146,7 +156,17 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
             }.bind(this));
         },
 
-        initDates: function () {
+        updateRange: function () {
+            if (
+                (this.start.unix() < this.fetchedStart.unix() + this.rangeMarginThreshold)
+                ||
+                (this.end.unix() > this.fetchedEnd.unix() - this.rangeMarginThreshold)
+            ) {
+                this.runFetch();
+            }
+        },
+
+        initDates: function (update) {
             var startS = this.model.get(this.startField);
             var endS = this.model.get(this.endField);
 
@@ -163,20 +183,23 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
 
             var diff = this.end.diff(this.start, 'hours');
 
-            this.start.add(-diff*2, 'hours');
-            this.end.add(diff*2, 'hours');
+            this.start.add(-diff * this.rangeMultiplier, 'hours');
+            this.end.add(diff * this.rangeMultiplier, 'hours');
 
             this.start.startOf('hour');
             this.end.endOf('hour');
 
-            this.fetchedStart = null;
-            this.fetchedEnd = null;
+            if (!update) {
+                this.fetchedStart = null;
+                this.fetchedEnd = null;
+            }
         },
 
         runFetch: function () {
             this.fetch(this.start, this.end, function (eventList) {
-                var itemsDataSet = new Vis.DataSet(eventList);
+                var itemsDataSet = new this.Vis.DataSet(eventList);
                 this.timeline.setItems(itemsDataSet);
+                this.addEventToDataSet(itemsDataSet);
             }.bind(this));
         },
 
@@ -208,6 +231,10 @@ define('crm:views/scheduler/scheduler', ['view'], function (Dep) {
                 callback(convertedEventList);
 
             }.bind(this));
+        },
+
+        addEventToDataSet: function (dataSet) {
+
         },
 
         convertEventList: function (list) {

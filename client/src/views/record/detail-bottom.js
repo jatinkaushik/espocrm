@@ -160,7 +160,7 @@ define('views/record/detail-bottom', 'views/record/panels-container', function (
                     item.actionsViewKey = item.name + 'Actions';
                 }, this);
 
-                if (this.layoutData) this.alterPanels();
+                this.alterPanels();
 
                 this.setupPanelsFinal();
 

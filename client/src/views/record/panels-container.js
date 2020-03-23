@@ -262,7 +262,7 @@ define('views/record/panels-container', 'view', function (Dep) {
 
             var newList = [];
             this.panelList.forEach(function (item, i) {
-                item.index = i;
+                item.index = ('index' in item) ? item.index : i;
                 if (item.name) {
                     var itemData = layoutData[item.name] || {};
                     if (itemData.disabled) return;

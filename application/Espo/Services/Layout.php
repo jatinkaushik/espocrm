@@ -70,7 +70,9 @@ class Layout extends \Espo\Core\Services\Base
 
         if ($result === false) {
             $methodName = 'getOriginal' . ucfirst($name);
-            $result = $this->$methodName($scope, $setId);
+            if (method_exists($this, $methodName)) {
+                $result = $this->$methodName($scope, $setId);
+            }
         }
 
         return $result;
@@ -148,7 +150,9 @@ class Layout extends \Espo\Core\Services\Base
 
         if ($data === false) {
             $methodName = 'getForFrontend' . ucfirst($name);
-            $data = $this->$methodName($scope, $name);
+            if (method_exists($this, $methodName)) {
+                $data = $this->$methodName($scope);
+            }
         }
 
         return $data;

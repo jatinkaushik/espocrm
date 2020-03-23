@@ -149,8 +149,7 @@ define('views/record/detail-side', 'views/record/panels-container', function (De
                         if (this.defaultPanel)
                             this.setupDefaultPanel();
 
-                        if (this.layoutData)
-                            this.alterPanels();
+                        this.alterPanels();
 
                         this.setupPanelsFinal();
 

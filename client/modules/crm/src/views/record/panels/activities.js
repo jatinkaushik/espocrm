@@ -146,6 +146,10 @@ define('crm:views/record/panels/activities', ['views/record/panels/relationship'
             this.collection.maxSize = this.getConfig().get('recordsPerPageSmall') || 5;
 
             this.setFilter(this.filter);
+
+            this.once('show', function () {
+                this.actionRefresh();
+            }, this);
         },
 
         translateFilter: function (name) {

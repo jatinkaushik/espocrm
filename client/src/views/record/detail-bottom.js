@@ -60,10 +60,17 @@ define('views/record/detail-bottom', 'views/record/panels-container', function (
                 this.listenToOnce(this.model, 'sync', function () {
                     streamAllowed = this.getAcl().checkModel(this.model, 'stream', true);
                     if (streamAllowed) {
-                        this.showPanel('stream', function () {
-                            this.getView('stream').collection.fetch();
-                            this.getView('stream').subscribeToWebSocket();
-                        });
+                        this.recordHelper.setPanelStateParam('stream', 'hiddenAclLocked', false);
+                        Promise.race([
+                            new Promise (function (resolve) {
+                                if (this.panelsAreSet) resolve();
+                            }.bind(this)),
+                            new Promise (function (resolve) {
+                                this.once('panels-set', resolve);
+                            }.bind(this))
+                        ]).then(function () {
+                            this.showPanel('stream');
+                        }.bind(this));
                     }
                 }, this);
             }
@@ -71,11 +78,15 @@ define('views/record/detail-bottom', 'views/record/panels-container', function (
                 this.panelList.push({
                     name: 'stream',
                     label: 'Stream',
-                    view: 'views/stream/panel',
+                    view: this.getMetadata().get(['clientDefs', this.scope, 'streamPanelView']) || 'views/stream/panel',
                     sticked: true,
                     hidden: !streamAllowed,
                     order: 2,
                 });
+
+                if (!streamAllowed) {
+                    this.recordHelper.setPanelStateParam('stream', 'hiddenAclLocked', true);
+                }
             }
         },
 

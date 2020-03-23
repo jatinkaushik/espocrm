@@ -30,6 +30,8 @@ define('views/record/panels-container', 'view', function (Dep) {
 
     return Dep.extend({
 
+        panelSoftLockedTypeList: ['default', 'acl', 'delimiter', 'dynamicLogic'],
+
         data: function () {
             return {
                 panelList: this.panelList,
@@ -178,8 +180,17 @@ define('views/record/panels-container', 'view', function (Dep) {
             return data;
         },
 
-        showPanel: function (name, callback) {
+        showPanel: function (name, softLockedType, callback) {
             if (this.recordHelper.getPanelStateParam(name, 'hiddenLocked')) return;
+
+            softLockedType = softLockedType || 'default';
+
+            for (var i = 0; i < this.panelSoftLockedTypeList.length; i++) {
+                var iType = this.panelSoftLockedTypeList[i];
+                if (iType === softLockedType) continue;
+                var iParam = 'hidden' +  Espo.Utils.upperCaseFirst(iType) + 'Locked';
+                if (this.recordHelper.getPanelStateParam(name, iParam)) return;
+            }
 
             this.recordHelper.setPanelStateParam(name, 'hidden', false);
 
@@ -206,20 +217,36 @@ define('views/record/panels-container', 'view', function (Dep) {
                         }
                     }
                 }
-                if (callback) {
+                if (typeof callback == 'function') {
                     callback.call(this);
                 }
             } else {
-                if (callback) {
-                    this.once('after:render', function () {
+                this.once('after:render', function () {
+                    var view = this.getView(name);
+                    if (view) {
+                        view.$el.closest('.panel').removeClass('hidden');
+                        view.disabled = false;
+                        view.trigger('show');
+                    }
+
+                    if (typeof callback == 'function') {
                         callback.call(this);
-                    }, this);
-                }
+                    }
+                }, this);
+
             }
         },
 
-        hidePanel: function (name, callback) {
+        hidePanel: function (name, locked, softLockedType, callback) {
             this.recordHelper.setPanelStateParam(name, 'hidden', true);
+
+            softLockedType = softLockedType || 'default';
+
+            if (softLockedType) {
+                this.recordHelper.getPanelStateParam(
+                     name, 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked', true
+                );
+            }
 
             var isFound = false;
             this.panelList.forEach(function (d) {
@@ -237,11 +264,11 @@ define('views/record/panels-container', 'view', function (Dep) {
                     view.disabled = true;
                     view.trigger('hide');
                 }
-                if (callback) {
+                if (typeof callback == 'function') {
                     callback.call(this);
                 }
             } else {
-                if (callback) {
+                if (typeof callback == 'function') {
                     this.once('after:render', function () {
                         callback.call(this);
                     }, this);
@@ -310,6 +337,7 @@ define('views/record/panels-container', 'view', function (Dep) {
                     p.hidden = true;
                     p.hiddenAfterDelimiter = true;
                     this.recordHelper.setPanelStateParam(p.name, 'hidden', true);
+                    this.recordHelper.setPanelStateParam(p.name, 'hiddenDelimiterLocked', true);
                 }
                 if (rightAfterDelimiter) {
                     p.isRightAfterDelimiter = true;
@@ -324,16 +352,28 @@ define('views/record/panels-container', 'view', function (Dep) {
             this.panelList = this.panelList.filter(function (p) {
                 return !this.recordHelper.getPanelStateParam(p.name, 'hiddenLocked');
             }, this);
+
+            this.panelsAreSet = true;
+            this.trigger('panels-set');
         },
 
         actionShowMorePanels: function () {
             this.panelList.forEach(function (p) {
                 if (!p.hiddenAfterDelimiter) return;
                 delete p.isRightAfterDelimiter;
+                this.recordHelper.setPanelStateParam(p.name, 'hiddenDelimiterLocked', false);
                 this.showPanel(p.name);
             }, this);
 
             this.$el.find('.panels-show-more-delimiter').remove();
+        },
+
+        setPanelParam: function (name, param, value) {
+            this.panelList.forEach(function (p) {
+                if (p.name == name) {
+                    p[param] = value;
+                }
+            });
         },
 
     });

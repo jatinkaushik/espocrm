@@ -197,10 +197,6 @@ define('views/admin/layouts/side-panels-detail', 'views/admin/layouts/rows', fun
 
                 this.dataAttributeList.forEach(function (attribute) {
                     if (attribute === 'name') return;
-                    /*var value = attributes[attribute] || null;
-                    if (value) {
-
-                    }*/
                     if (attribute in attributes) {
                         o[attribute] = attributes[attribute];
                     }

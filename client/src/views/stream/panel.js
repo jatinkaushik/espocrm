@@ -370,6 +370,10 @@ define('views/stream/panel', ['views/record/panels/relationship', 'lib!Textcompl
             }, this);
             if (!this.defs.hidden) {
                 collection.fetch();
+            } else {
+                this.once('show', function () {
+                    collection.fetch();
+                });
             }
 
             var assignmentPermission = this.getAcl().get('assignmentPermission');

@@ -60,17 +60,9 @@ define('views/record/detail-bottom', 'views/record/panels-container', function (
                 this.listenToOnce(this.model, 'sync', function () {
                     streamAllowed = this.getAcl().checkModel(this.model, 'stream', true);
                     if (streamAllowed) {
-                        this.recordHelper.setPanelStateParam('stream', 'hiddenAclLocked', false);
-                        Promise.race([
-                            new Promise (function (resolve) {
-                                if (this.panelsAreSet) resolve();
-                            }.bind(this)),
-                            new Promise (function (resolve) {
-                                this.once('panels-set', resolve);
-                            }.bind(this))
-                        ]).then(function () {
-                            this.showPanel('stream');
-                        }.bind(this));
+                        this.onPanelsReady(function () {
+                            this.showPanel('stream', 'acl');
+                        });
                     }
                 }, this);
             }

@@ -432,6 +432,10 @@ define('views/record/detail', ['views/record/base', 'view-record-helper'], funct
 
             softLockedType = softLockedType || 'default';
 
+            this.recordHelper.setPanelStateParam(
+                name, 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked', false
+            );
+
             for (var i = 0; i < this.panelSoftLockedTypeList.length; i++) {
                 var iType = this.panelSoftLockedTypeList[i];
                 if (iType === softLockedType) continue;

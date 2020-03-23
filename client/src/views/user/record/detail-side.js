@@ -26,7 +26,7 @@
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
-Espo.define('views/user/record/detail-side', 'views/record/detail-side', function (Dep) {
+define('views/user/record/detail-side', 'views/record/detail-side', function (Dep) {
 
     return Dep.extend({
 
@@ -48,11 +48,13 @@ Espo.define('views/user/record/detail-side', 'views/record/detail-side', functio
                     if (!this.model.has('teamsIds')) {
                         this.listenToOnce(this.model, 'sync', function () {
                             if (this.getAcl().checkUserPermission(this.model)) {
-                                this.showPanel('activities', 'acl');
-                                this.showPanel('history', 'acl');
-                                if (!this.model.isPortal()) {
-                                    this.showPanel('tasks', 'acl');
-                                }
+                                this.onPanelsReady(function () {
+                                    this.showPanel('activities', 'acl');
+                                    this.showPanel('history', 'acl');
+                                    if (!this.model.isPortal()) {
+                                        this.showPanel('tasks', 'acl');
+                                    }
+                                });
                             }
                         }, this);
                     }
@@ -68,6 +70,7 @@ Espo.define('views/user/record/detail-side', 'views/record/detail-side', functio
             if (this.model.isPortal()) {
                 this.hidePanel('tasks', true);
             }
-        }
+        },
+
     });
 });

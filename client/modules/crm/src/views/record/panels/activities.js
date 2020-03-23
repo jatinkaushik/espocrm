@@ -148,7 +148,8 @@ define('crm:views/record/panels/activities', ['views/record/panels/relationship'
             this.setFilter(this.filter);
 
             this.once('show', function () {
-                this.actionRefresh();
+                if (!this.isRendered() && !this.isBeingRendered())
+                this.collection.fetch();
             }, this);
         },
 

@@ -183,7 +183,11 @@ define('views/record/panels-container', 'view', function (Dep) {
         showPanel: function (name, softLockedType, callback) {
             if (this.recordHelper.getPanelStateParam(name, 'hiddenLocked')) return;
 
-            softLockedType = softLockedType || 'default';
+            if (softLockedType) {
+                this.recordHelper.setPanelStateParam(
+                    name, 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked', false
+                );
+            }
 
             for (var i = 0; i < this.panelSoftLockedTypeList.length; i++) {
                 var iType = this.panelSoftLockedTypeList[i];
@@ -240,10 +244,12 @@ define('views/record/panels-container', 'view', function (Dep) {
         hidePanel: function (name, locked, softLockedType, callback) {
             this.recordHelper.setPanelStateParam(name, 'hidden', true);
 
-            softLockedType = softLockedType || 'default';
+            if (locked) {
+                this.recordHelper.setPanelStateParam(name, 'hiddenLocked', true);
+            }
 
             if (softLockedType) {
-                this.recordHelper.getPanelStateParam(
+                this.recordHelper.setPanelStateParam(
                      name, 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked', true
                 );
             }
@@ -361,19 +367,23 @@ define('views/record/panels-container', 'view', function (Dep) {
             this.panelList.forEach(function (p) {
                 if (!p.hiddenAfterDelimiter) return;
                 delete p.isRightAfterDelimiter;
-                this.recordHelper.setPanelStateParam(p.name, 'hiddenDelimiterLocked', false);
-                this.showPanel(p.name);
+                this.showPanel(p.name, 'delimiter');
             }, this);
 
             this.$el.find('.panels-show-more-delimiter').remove();
         },
 
-        setPanelParam: function (name, param, value) {
-            this.panelList.forEach(function (p) {
-                if (p.name == name) {
-                    p[param] = value;
-                }
-            });
+        onPanelsReady: function (callback) {
+            Promise.race([
+                new Promise (function (resolve) {
+                    if (this.panelsAreSet) resolve();
+                }.bind(this)),
+                new Promise (function (resolve) {
+                    this.once('panels-set', resolve);
+                }.bind(this))
+            ]).then(function () {
+                callback.call(this);
+            }.bind(this));
         },
 
     });

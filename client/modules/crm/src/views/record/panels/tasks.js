@@ -120,7 +120,8 @@ define('crm:views/record/panels/tasks', 'views/record/panels/relationship', func
             }, this);
 
             this.once('show', function () {
-                this.actionRefresh();
+                if (!this.isRendered() && !this.isBeingRendered())
+                this.collection.fetch();
             }, this);
         },
 
